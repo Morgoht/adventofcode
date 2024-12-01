@@ -1,42 +1,58 @@
+/**Total distance 
+ * Obkectif : coupler le plus petit nombre de la liste de gauche
+ * avec le plus petit de la liste de droit. Puis le second plus petit 
+ * et ainsi de suite.
+ * 
+ * Pour chaque paire, trouver l'ecart entre les deux
+ * et aditionner tout ça
+*/
 const fs = require('fs');
+const { isUtf8 } = require('buffer');
+
 
 const filePath = './data.txt';
 
 fs.readFile(filePath, 'utf-8', (err, data) => {
-  if (err) {
-    console.error('Error while loading file:', err);
-    return;
-  }
-
-  const leftNumbersTab: number[] = [];
-  const rightNumbersTab: number[] = [];
-  let total: number = 0;
-
-  // Lire les données et remplir les tableaux
-  data.split('\n')
-    .filter(line => line.trim() !== '') // Ignorer les lignes vides
-    .forEach(line => {
-      const [left, right] = line.split(/\s+/).map(Number); // Convertir directement en nombres
-      if (!isNaN(left)) leftNumbersTab.push(left);
-      if (!isNaN(right)) rightNumbersTab.push(right);
+    if(err){
+        console.error('error while loading file');
+        return;
+    }
+    //console.log(data);
+    // j'ai bien accès aux données, maintenant il faut mettre dans un premier tableai
+    // les donnée de gauche et dans un second les données de droite.
+const leftNumbersTab: number[] = [];
+const rightNumbersTab: number[] = [];
+var total: number = 0;
+data.split('\n')
+.forEach(line => {
+    //destructuration
+    const [leftNumbers, rightNumbers] = line.split('  ');
+    rightNumbersTab.push(parseInt(rightNumbers));
+    leftNumbersTab.push(parseInt(leftNumbers));
+})
+const getMinValue = (tab) => {
+    console.log(tab);
+    var minValue;
+    tab.forEach(n => {
+        if(n < minValue)minValue = n;
     });
-
-  // Fonction pour obtenir et supprimer la valeur minimale
-  const getMinValue = (tab: number[]): number => {
-    const minValue = Math.min(...tab); // Trouver la valeur minimale
-    const index = tab.indexOf(minValue); // Trouver son index
-    if (index !== -1) tab.splice(index, 1); // Supprimer l'élément
+    tab.pop(minValue);
     return minValue;
-  };
+}
 
-  // Calculer la distance totale
-  while (leftNumbersTab.length > 0 && rightNumbersTab.length > 0) {
-    const minValueLeft = getMinValue(leftNumbersTab);
-    const minValueRight = getMinValue(rightNumbersTab);
+console.log('left tab', leftNumbersTab);
+console.log('right tab', rightNumbersTab);
 
-    const gap: number = Math.abs(minValueLeft - minValueRight); // Calcul de l'écart
+while(leftNumbersTab.length > 0){
+    var minValueLeft = getMinValue(leftNumbersTab);
+    var minValueRight = getMinValue(rightNumbersTab);
+    
+
+    var gap: number = (minValueLeft - minValueRight);
+    if(gap <0) gap = gap* -1;
+    console.log(total)
     total += gap;
-  }
+}
+console.log(total);
 
-  console.log('Total distance:', total);
-});
+})
