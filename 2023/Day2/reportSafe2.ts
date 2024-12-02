@@ -2,57 +2,50 @@ const fs = require('fs');
 
 let safeReport = 0;
 
-fs.readFile('./data2.txt', 'utf8', (err, data) => {
+fs.readFile('./data.txt', 'utf8', (err, data) => {
   if (err) {
     console.error('Error reading file:', err);
     return;
   }
 
-  const dataTab = data.split('\n').filter((line) => line.trim() !== ''); // Ignorer les lignes vides
+  const dataTab = data.split('\n');
 
   dataTab.forEach((line) => {
     const numbers = line.split(' ').map(Number);
 
-    if (numbers[1] > numbers[0]) {
-      safeReport += checkSafeIncr(numbers, true); // Récursivité autorisée
-    } else {
-      safeReport += checkSafeDec(numbers, true); // Récursivité autorisée
+    if (checkSafeIncr([...numbers]) || checkSafeDec([...numbers])) {
+      safeReport++;
     }
   });
 
-  // Vérifie l'ordre croissant avec suppression d'une erreur
-  function checkSafeIncr(numbers, allowRetry) {
-    for (let i = 1; i < numbers.length; i++) {
-      const diff = numbers[i] - numbers[i - 1];
-
-      if (diff < 1 || diff >= 4) {
-        if (allowRetry) {
-          const updatedNumbers = [...numbers];
-          updatedNumbers.splice(i, 1); // Supprime le nombre fautif
-          return checkSafeIncr(updatedNumbers, false); // Réévalue la ligne sans récursivité
-        }
-        return 0; // Si déjà une tentative, invalide la ligne
-      }
-    }
-    return 1; 
+  // Vérifie si une combinaison est possible en croissant
+  function checkSafeIncr(numbers) {
+    return check(numbers, (a, b) => b - a, true);
   }
 
+  // Vérifie si une combinaison est possible en décroissant
+  function checkSafeDec(numbers) {
+    return check(numbers, (a, b) => a - b, true);
+  }
 
-  function checkSafeDec(numbers, allowRetry) {
-    var result = 0;
+  // Fonction générique qui contient le tableau original
+  function check(numbers, compare, tryAgain) {
     for (let i = 1; i < numbers.length; i++) {
-      const diff = numbers[i - 1] - numbers[i];
-
-      if (diff < 1 || diff >= 4) {
-        if (allowRetry) {
-          const updatedNumbers = [...numbers];
-          updatedNumbers.splice(i, 1); 
-          return checkSafeDec(updatedNumbers, false); 
+      const diff = compare(numbers[i - 1], numbers[i]);
+      if (diff < 1 || diff > 3) {
+        if (tryAgain) {
+          // parcours unique
+          for (let j = 0; j < numbers.length; j++) {
+            const modifiedNumbers = [...numbers.slice(0, j), ...numbers.slice(j + 1)];
+            if (check(modifiedNumbers, compare, false)) {
+              return true;
+            }
+          }
         }
-        return 0; 
+        return false; // Aucune combinaison valide trouvée
       }
     }
-    return 1; // Ligne valide
+    return true; // Pas d'erreur détectée
   }
 
   console.log('Safe Report:', safeReport);

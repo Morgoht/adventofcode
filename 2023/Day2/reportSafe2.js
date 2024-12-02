@@ -9,51 +9,44 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 };
 var fs = require('fs');
 var safeReport = 0;
-fs.readFile('./data2.txt', 'utf8', function (err, data) {
+fs.readFile('./data.txt', 'utf8', function (err, data) {
     if (err) {
         console.error('Error reading file:', err);
         return;
     }
-    var dataTab = data.split('\n').filter(function (line) { return line.trim() !== ''; }); // Ignorer les lignes vides
+    var dataTab = data.split('\n');
     dataTab.forEach(function (line) {
         var numbers = line.split(' ').map(Number);
-        if (numbers[1] > numbers[0]) {
-            safeReport += checkSafeIncr(numbers, true); // Récursivité autorisée
-        }
-        else {
-            safeReport += checkSafeDec(numbers, true); // Récursivité autorisée
+        if (checkSafeIncr(__spreadArray([], numbers, true)) || checkSafeDec(__spreadArray([], numbers, true))) {
+            safeReport++;
         }
     });
-    // Vérifie l'ordre croissant avec suppression d'une erreur
-    function checkSafeIncr(numbers, allowRetry) {
-        for (var i = 1; i < numbers.length; i++) {
-            var diff = numbers[i] - numbers[i - 1];
-            if (diff < 1 || diff >= 4) {
-                if (allowRetry) {
-                    var updatedNumbers = __spreadArray([], numbers, true);
-                    updatedNumbers.splice(i, 1); // Supprime le nombre fautif
-                    return checkSafeIncr(updatedNumbers, false); // Réévalue la ligne sans récursivité
-                }
-                return 0; // Si déjà une tentative, invalide la ligne
-            }
-        }
-        return 1; // Ligne valide
+    // Vérifie si une combinaison est possible en croissant
+    function checkSafeIncr(numbers) {
+        return check(numbers, function (a, b) { return b - a; }, true);
     }
-    // Vérifie l'ordre décroissant avec suppression d'une erreur
-    function checkSafeDec(numbers, allowRetry) {
-        var result = 0;
+    // Vérifie si une combinaison est possible en décroissant
+    function checkSafeDec(numbers) {
+        return check(numbers, function (a, b) { return a - b; }, true);
+    }
+    // Fonction générique qui contient le tableau original
+    function check(numbers, compare, tryAgain) {
         for (var i = 1; i < numbers.length; i++) {
-            var diff = numbers[i - 1] - numbers[i];
-            if (diff < 1 || diff >= 4) {
-                if (allowRetry) {
-                    var updatedNumbers = __spreadArray([], numbers, true);
-                    updatedNumbers.splice(i, 1); // Supprime le nombre fautif
-                    return checkSafeDec(updatedNumbers, false); // Réévalue la ligne sans récursivité
+            var diff = compare(numbers[i - 1], numbers[i]);
+            if (diff < 1 || diff > 3) {
+                if (tryAgain) {
+                    // parcours unique
+                    for (var j = 0; j < numbers.length; j++) {
+                        var modifiedNumbers = __spreadArray(__spreadArray([], numbers.slice(0, j), true), numbers.slice(j + 1), true);
+                        if (check(modifiedNumbers, compare, false)) {
+                            return true;
+                        }
+                    }
                 }
-                return 0; // Si déjà une tentative, invalide la ligne
+                return false; // Aucune combinaison valide trouvée
             }
         }
-        return 1; // Ligne valide
+        return true; // Pas d'erreur détectée
     }
     console.log('Safe Report:', safeReport);
 });
